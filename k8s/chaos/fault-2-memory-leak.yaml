@@ -1,0 +1,8 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata: { name: aegis-fault-2, namespace: default, labels: { aegis/fault-id: "2" } }
+spec:
+  mode: one
+  selector: { labelSelectors: { app: recommendationservice } }
+  stressors: { memory: { workers: 1, size: "300MB" } }
+  duration: "5m"

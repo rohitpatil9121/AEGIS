@@ -1,0 +1,11 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata: { name: aegis-fault-6, namespace: default, labels: { aegis/fault-id: "6" } }
+spec:
+  action: delay
+  mode: all
+  selector: { labelSelectors: { app: checkoutservice } }
+  direction: to
+  target: { mode: all, selector: { labelSelectors: { app: paymentservice } } }
+  delay: { latency: "400ms", jitter: "50ms" }
+  duration: "5m"
