@@ -8,6 +8,7 @@ import {
   Eraser, FlaskConical, UserCheck, AlertTriangle, CheckCircle2, Gauge, WifiOff,
   Server, Cpu, Keyboard, ChevronRight,
 } from 'lucide-react'
+import { apiGet, apiPost, apiMode } from './api.js'
 
 // Chart series palette: validated with the dataviz skill's validator (dark, surface #121722).
 // AEGIS = blue, forecast = orange; baselines are neutral (gray, dashed) so identity never
@@ -29,9 +30,7 @@ const STATUS = {
 }
 const OPEN = ['detected', 'diagnosing', 'repairing']
 
-const post = (url, body) => fetch(url, {
-  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined,
-}).then(r => r.json())
+const post = apiPost
 
 export default function App() {
   const [s, setS] = useState(null)
@@ -44,17 +43,20 @@ export default function App() {
   const toastTimer = useRef()
 
   const refresh = useCallback(() =>
-    fetch('/api/state').then(r => r.json()).then(d => { setS(d); setOffline(false) })
+    apiGet('/api/state').then(d => { setS(d); setOffline(false) })
       .catch(() => setOffline(true)), [])
 
   useEffect(() => { refresh(); const id = setInterval(refresh, 1000); return () => clearInterval(id) }, [refresh])
-  useEffect(() => { fetch('/api/results').then(r => r.json()).then(d => d.E1 && setResults(d)).catch(() => {}) }, [])
+  useEffect(() => { apiGet('/api/results').then(d => d.E1 && setResults(d)).catch(() => {}) }, [])
 
   const say = (msg, kind = 'info') => {
     clearTimeout(toastTimer.current)
     setToast({ msg, kind })
     toastTimer.current = setTimeout(() => setToast(null), 3500)
   }
+  useEffect(() => {
+    apiMode().then(m => m === 'demo' && say('No backend reachable: running the AEGIS engine in your browser'))
+  }, [])
   const act = async (url, body, msg, key = url) => {
     setBusy(key)
     try {
