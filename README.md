@@ -3,6 +3,8 @@
 Observe → Predict → Detect → Explain (LLM) → **Guardrail** → Act, with a live dashboard.
 
 ## Quick start (no Kubernetes needed)
+New to AEGIS, or on Windows without `make`? Follow the [step-by-step tutorial](docs/first-repair.md).
+
 ```
 make setup
 make backend      # terminal 1 — control loop + API on :8000 (simulated 6-service cluster)
