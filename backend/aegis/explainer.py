@@ -29,6 +29,10 @@ def detect(ctx: dict[str, list[float]], pod_states: dict[str, str]) -> tuple[str
     lat = ctx.get("p95_latency_ms", [])
     if lat and lat[-1] > 500:
         return "frontend", f"p95 latency {lat[-1]:.0f}ms > 500ms SLO"
+    # A slow call path between healthy pods can hide under the frontend SLO, so check it on its own.
+    dep = ctx.get("dep_latency_ms", [])
+    if len(dep) >= 3 and min(dep[-3:]) > 200:
+        return "checkout", f"checkout->payment p95 {dep[-1]:.0f}ms > 200ms"
     err = ctx.get("error_rate", [])
     if len(err) >= 3 and err[-1] > 0.05 and err[-1] > 2 * err[-3]:
         return "checkout", f"error rate {err[-1]:.1%} rising"
