@@ -35,6 +35,7 @@ def p95_latency(rps: float, replicas: int) -> float:
 class SimCluster:
     def __init__(self, seed: int | None = None):
         self.rng = random.Random(seed)
+        self.dep_rng = random.Random(seed)  # separate stream so existing metric sequences are unchanged
         self.t = 0
         self.pods = {s: "Running" for s in SERVICES}
         self.replicas = {s: 2 for s in SERVICES}
@@ -126,7 +127,9 @@ class SimCluster:
             lat += 160
         if err > 0.1:
             lat += 120
-        return {"rps": rps, "p95_latency_ms": lat, "error_rate": err,
+        # p95 of the checkout -> payment call path, as a service mesh would report it
+        dep = 14 + abs(self.dep_rng.gauss(0, 3)) + (400 if 6 in self.faults else 0)
+        return {"rps": rps, "p95_latency_ms": lat, "error_rate": err, "dep_latency_ms": dep,
                 "cpu": min(100, 100 * rps / (self.replicas["frontend"] * RPS_PER_REPLICA))}
 
 
@@ -142,7 +145,7 @@ class Engine:
         self.predictive = predictive
         self.mode = mode  # aegis | k8s (restart-only) | none
         self.metrics: dict[str, deque[float]] = {k: deque(maxlen=WINDOW) for k in
-                                                  ("rps", "p95_latency_ms", "error_rate", "cpu",
+                                                  ("rps", "p95_latency_ms", "error_rate", "cpu", "dep_latency_ms",
                                                    "forecast", "replicas", "hpa_replicas",
                                                    "hpa_latency_ms")}
         self.forecast_ahead: list[float] = []
